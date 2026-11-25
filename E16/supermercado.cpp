@@ -33,10 +33,10 @@ vector<int> optimista(vector<vector<int>> const& precios, int m, int p){ //infra
 }
 
 
-int pesimista(vector<vector<int>> const& precios, int m, int p, Nodo const& X, vector<int> &sol_parcial){
+int pesimista(vector<vector<int>> const& precios, int m, int p, Nodo const& X){
     vector<int> stock = X.stock;
     int pes = X.precio;
-    sol_parcial = X.sol;
+
     for(int i = X.k + 1; i < p; ++i){
         int minim = -1;
         for(int j = 0; j < m; ++j){
@@ -47,7 +47,6 @@ int pesimista(vector<vector<int>> const& precios, int m, int p, Nodo const& X, v
         if(minim == -1) return INT_MAX;   // no completable desde X
         stock[minim]--;
         pes += precios[minim][i];
-        sol_parcial[i] = minim;
     }
 
     return pes;
@@ -63,14 +62,14 @@ void supermercado_rp(vector<vector<int>> const& precios, int m, int p, vector<in
 
     vector<int> opt = optimista(precios, m, p);
     Y.precio_estimado = Y.precio + opt[Y.k + 1];
-    vector<int> sol_parcial(p);
-    precio_mejor = pesimista(precios, m, p, Y, sol_parcial);
+
+    precio_mejor = pesimista(precios, m, p, Y);
 
 
     priority_queue<Nodo> q;
     q.push(Y);
 
-    while(!q.empty() && q.top().precio_estimado < precio_mejor){
+    while(!q.empty() && q.top().precio_estimado <= precio_mejor){
         Y = q.top(); q.pop();
         Nodo X(Y);
         X.k++; // producto
@@ -89,13 +88,9 @@ void supermercado_rp(vector<vector<int>> const& precios, int m, int p, vector<in
                 }
                 else {
                     X.precio_estimado = X.precio + opt[X.k + 1];
-                    if(X.precio_estimado < precio_mejor){
+                    if(X.precio_estimado <= precio_mejor){
+                        precio_mejor = min(pesimista(precios, m, p, X), precio_mejor);
                         q.push(X);
-                        int cota = pesimista(precios, m, p, X, sol_parcial);
-                        if(precio_mejor > cota){
-                            precio_mejor = cota;
-                            sol_mejor = sol_parcial;
-                        }  
                     }
                 }
                 
